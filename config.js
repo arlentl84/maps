@@ -1,0 +1,6 @@
+const CONFIG = {
+    GOOGLE_MAPS_API_KEY: 'AIzaSyDKnO4wHj7rpeUzPezWriamtC0iEfqIZRY',
+    
+    DEFAULT_ZOOM: 12,
+    DEFAULT_RADIUS: 1000
+};

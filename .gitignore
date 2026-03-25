@@ -1,7 +1,7 @@
 /.idea/
 
 # API Keys y configuración sensible
-config.js
+
 
 # Node modules (si usas npm)
 node_modules/

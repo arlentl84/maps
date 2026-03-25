@@ -1,0 +1,597 @@
+/* Base styles for the POI Search UI */
+
+:root {
+  --ra-blue-dark: #335572;
+  --ra-grey-blue: #55606d;
+  --ra-white-blue: #e0e7ed;
+  --ra-grey-light: #aaaaaa;
+  --ra-white: #ffffff;
+  --ra-black: #232323;
+  --ra-yellow: #edb426;
+  --ra-danger: #dc3545;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--ra-white-blue);
+  color: var(--ra-black);
+  min-height: 100vh;
+  font-size: 0.85rem;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background: linear-gradient(90deg, var(--ra-blue-dark), var(--ra-grey-blue));
+  color: var(--ra-white);
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-header h1 {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.app-header__logo {
+  height: 48px;
+  width: auto;
+  flex-shrink: 0;
+  border: 0px solid #ffffff;
+  border-radius: 10px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.app-header__logo {
+  height: 40px;
+}
+.header-menu-button {
+  background: var(--ra-black);
+  color: var(--ra-white);
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.header-menu-button:focus {
+  outline: 2px solid var(--ra-blue-dark);
+}
+.header-menu-dropdown {
+  position: absolute;
+  right: 1rem;
+  top: 60px;
+  background: var(--ra-black);
+  color: var(--ra-white);
+  border: 1px solid var(--ra-grey-blue);
+  border-radius: 6px;
+  min-width: 160px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  display: none;
+  z-index: 1000;
+}
+.header-menu-dropdown.open {
+  display: block;
+}
+.header-menu-dropdown a {
+  display: block;
+  padding: 8px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.header-menu-dropdown a:hover {
+  background: rgba(51,85,114,0.08);
+}
+
+.app-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.control-panel {
+  background-color: var(--ra-white);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 33, 55, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.panel-section h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--ra-blue-dark);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #37474f;
+}
+
+input[type="color"],
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--ra-grey-light);
+  border-radius: 8px;
+  background-color: var(--ra-white);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--ra-blue-dark);
+  box-shadow: 0 0 0 2px rgba(51,85,114,0.12);
+}
+
+input[readonly] {
+  cursor: default;
+  background-color: #f6f6f6;
+}
+
+select:disabled {
+  color: #455a64;
+  background-color: #f6f6f6;
+  cursor: default;
+}
+
+select {
+  cursor: pointer;
+}
+
+select option {
+  padding: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select__toggle {
+  width: 100%;
+  height: 40px;
+  background-color: var(--ra-white);
+  border: 1px solid var(--ra-grey-light);
+  border-radius: 8px;
+  padding: 0 12px;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--ra-grey-blue);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multi-select__toggle::after {
+  content: "\25BC";
+  font-size: 0.6rem;
+  color: var(--ra-grey-blue);
+}
+
+.multi-select__toggle:focus {
+  outline: none;
+  border-color: #7b1fa2;
+  box-shadow: 0 0 0 2px rgba(123, 31, 162, 0.2);
+}
+
+.multi-select__options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background-color: var(--ra-white);
+  border: 1px solid var(--ra-grey-light);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(15, 33, 55, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 10;
+  padding: 8px 0;
+}
+
+.multi-select__option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  color: var(--ra-black);
+  cursor: pointer;
+}
+
+.multi-select__option--select-all {
+  border-bottom: 1px solid #eceff1;
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+}
+
+.multi-select__option:hover {
+  background-color: var(--ra-white-blue);
+}
+
+.multi-select__option input[type="checkbox"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.multi-select__swatch {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--ra-white);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.multi-select__swatch--icon {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  box-shadow: none;
+  background: transparent !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.multi-select__swatch-image {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.multi-select__swatch--selectAll {
+  background: linear-gradient(135deg, #ffffff, #ffffff);
+}
+
+.multi-select__label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.multi-select__swatch--bank {
+  background: #f8f124ff;
+}
+
+.multi-select__swatch--pharmacy {
+  background: #ea3323;
+}
+
+.multi-select__swatch--foodDrink {
+  background: #8c1af6;
+}
+
+.multi-select__swatch--park {
+  background: #7a2917;
+}
+
+.multi-select__swatch--liquorStores {
+  background: #7a2917;
+}
+
+.multi-select__swatch--grocer {
+  background: rgb(149, 239, 3);
+}
+
+.multi-select__swatch--retailers {
+  background: #5985e1;
+}
+
+.multi-select__swatch--transit {
+  background: #000000;
+}
+
+.multi-select__swatch--sportRecreation {
+  background: #f19e39;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--ra-blue-dark);
+}
+
+.range-value {
+  font-size: 0.85rem;
+  color: var(--ra-grey-blue);
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+button {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+button#addReferencePin {
+  background: linear-gradient(90deg, var(--ra-yellow), #d89f23);
+  color: var(--ra-white);
+  box-shadow: 0 6px 15px rgba(237, 180, 38, 0.3);
+}
+
+button#searchPOI {
+  background: linear-gradient(90deg, var(--ra-blue-dark), var(--ra-grey-blue));
+  color: var(--ra-white);
+  box-shadow: 0 6px 15px rgba(51,85,114,0.25);
+}
+
+button:disabled {
+  background: #e0e0e0 !important;
+  color: #9e9e9e !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+button.secondary {
+  background-color: var(--ra-white-blue);
+  color: var(--ra-grey-blue);
+  box-shadow: 0 3px 10px rgba(55, 71, 79, 0.12);
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+.panel-hint {
+  font-size: 0.85rem;
+  color: var(--ra-grey-blue);
+  line-height: 1.4;
+}
+
+#map {
+  width: 100%;
+  min-height: 70vh;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 33, 55, 0.12);
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(224, 231, 237, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 999;
+}
+
+.loading-overlay--visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.loading-overlay__content {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 12px 32px rgba(15, 33, 55, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-overlay__label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ra-blue-dark);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(224,231,237,0.6);
+  border-top-color: var(--ra-blue-dark);
+  border-radius: 50%;
+  animation: loading-spinner-spin 0.75s linear infinite;
+}
+
+@keyframes loading-spinner-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.export-legend {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 180px;
+  background: var(--ra-white-blue);
+  border-left: 1px solid var(--ra-grey-light);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 12px;
+  font-size: 0.85rem;
+  color: var(--ra-black);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.export-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.export-legend__icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.export-legend__icon--inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.export-legend__icon--inline svg {
+  width: 100%;
+  height: 100%;
+}
+
+.export-legend__label {
+  font-weight: 400;
+}
+
+.custom-marker {
+  background-color: var(--ra-white);
+  border: 1px solid var(--ra-black);
+  border-radius: 4px;
+  padding: 2px 3px;
+  font-size: 10px;
+  color: var(--ra-black);
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Hide Google Maps footer utility links while keeping the primary attribution visible */
+.gm-style .gm-style-cc:not(:first-of-type) {
+  display: none !important;
+}
+
+.gmnoprint:nth-of-type(-n + 2) {
+  display: none !important;
+}
+
+#road-legend {
+    z-index: 10;
+    right: 10px;
+  background: rgba(255, 255, 255, 0.9); /* Un poco de transparencia */
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#road-legend h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  color: var(--ra-grey-blue);
+    letter-spacing: 0.5px;
+}
+
+.export-legend__item span {
+    font-weight: 500;
+}
+
+/* Contenedor del mini mapa */
+#inset-map-container {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    right: 20px;
+  width: 280px;
+  height: 220px;
+  border: 2px solid var(--ra-danger);
+  background: var(--ra-white);
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+.inset-header {
+  background: var(--ra-danger);
+  color: var(--ra-white);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#inset-map {
+    width: 100%;
+    height: calc(100% - 24px);
+}
+
+@media (max-width: 960px) {
+  .app-main {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    order: 2;
+  }
+
+  #map {
+    order: 1;
+    min-height: 50vh;
+  }
+}

@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New Rental Comps - Map</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon.png">
+    <link rel="shortcut icon" href="assets/img/favicon.png">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            gap: 1.5rem;
+            padding: 1.5rem;
+            min-height: 0;
+        }
+
+        /* SIDEBAR STYLES */
+        .control-panel {
+            background-color: var(--ra-white);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(15, 33, 55, 0.08);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .panel-section {
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: #f3f4f6;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #16a34a;
+            color: #fff;
+            border-color: #16a34a;
+        }
+
+        .file-label {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #374151;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .list {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            max-height: 250px;
+            overflow: auto;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        /* INSET BOXES (Mini-maps) */
+        .inset-box {
+            position: absolute;
+            background: white;
+            border: 2px solid #DB4437;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            touch-action: none;
+            min-width: 120px;
+            min-height: 100px;
+        }
+
+        .inset-header {
+            background: #DB4437;
+            color: white;
+            padding: 6px 10px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: move;
+            user-select: none;
+        }
+
+        .inset-map-view {
+            flex: 1;
+            width: 100%;
+            pointer-events: auto;
+        }
+
+        #map-wrapper {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        #map {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* SVG Overlay for connector lines */
+        #connector-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .connector-line {
+            filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5));
+        }
+
+        @media (max-width: 960px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .control-panel {
+                order: 2;
+            }
+
+            #map-wrapper {
+                order: 1;
+            }
+
+            #map {
+                min-height: 50vh;
+                height: 70vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div class="app-header__brand">
+                <img src="assets/img/logo.png" alt="Logo" class="app-header__logo">
+                <h1>Comps Map Generator</h1>
+            </div>
+            <div class="app-header__menu" style="position:relative;">
+                <button id="headerMenuButton" class="header-menu-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        width="20" height="20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </button>
+                <div id="headerMenu" class="header-menu-dropdown">
+                    <a href="./index.html">Home</a>
+                    <a href="new-rental-comps.html">Rental comps map</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <aside class="control-panel">
+                <section class="panel-section">
+                    <label for="viewSelect" class="file-label">Select View Type</label>
+                    <select id="viewSelect" class="btn" style="width: 100%;">
+                        <option value="new">New Rentals Comps</option>
+                        <option value="old">Old Rentals Comps</option>
+                        <option value="condo">Condo Comps</option>
+                    </select>
+                </section>
+
+                <section class="panel-section">
+                    <h2 id="panelTitle" style="font-size: 1.1rem; margin-top: 0;">New Rental Comps</h2>
+                    <input id="fileInput" type="file" accept="application/json" style="display:none" />
+                    <div style="display:flex; gap:8px;">
+                        <button id="chooseBtn" class="btn" style="flex: 1;">Choose JSON</button>
+                        <button id="drawBtn" class="btn btn-primary" style="flex: 1;">Draw Pins</button>
+                    </div>
+                    <div id="fileName" style="font-size: 0.85rem; color: #16a34a; margin-top: 10px;"></div>
+                    <div class="list">
+                        <ul id="addrList" style="padding-left: 20px;"></ul>
+                    </div>
+                </section>
+
+                <button id="exportPNG" class="btn" style="width: 100%; background: #1f2937; color: white;">Export Map as
+                    PNG
+                </button>
+            </aside>
+
+            <main id="map-wrapper">
+                <section id="map"></section>
+                <svg id="connector-canvas"></svg>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- Cargar configuración primero -->
+    <script src="config.js"></script>
+    <!-- Cargar Google Maps API dinámicamente usando la config -->
+    <script>
+        (function () {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    </script>
+
+    <script>
+        /**
+         * GLOBAL STATE
+         * markers: Array of Google Maps Marker objects for the rental comps
+         * referencePin: The specific marker representing the Subject Site (Star icon)
+         */
+        let map, geocoder, markers = [], referencePin = null, parsedAddresses = [], subjectSite = null
+
+        const SUBJECT_SITE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100"><polygon fill="black" points="50,1 61,39 99,39 69,61 80,99 50,77 20,99 31,61 1,39 39,39"/></svg>';
+        const MIN_GROUP_SIZE = 2;
+        const MAX_GROUP_SIZE = 10;
+        const DETAIL_ZOOM_THRESHOLD = 10;
+        const MAX_DETAIL_ZOOM_THRESHOLD = 13;
+        const MIN_RADIUS_METERS = 5;   // evita agrupar puntos casi idénticos
+        const MAX_RADIUS_METERS = 1500;  // límite máximo del grupo
+        const mapStyles = [
+            // Ocultar POIs genéricos
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            // Asegurar ocultado de POI comerciales, iconos y etiquetas
+            { featureType: 'poi.business', elementType: 'all', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi.business', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+
+            // Ocultar específicamente POIs comerciales y sus etiquetas/iconos
+            { featureType: 'poi.business', elementType: 'all', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi.business', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+
+            // Asegurar que los POI comerciales y sus iconos/etiquetas queden ocultos
+            { featureType: 'poi.business', elementType: 'all', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi.business', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+
+            // (Airport styling removed — 'poi.airport' is not a valid featureType)
+
+            // Regiones / barrios
+            {
+                featureType: 'administrative.neighborhood',
+                elementType: 'labels.text',
+                stylers: [
+                    { visibility: 'on' },
+                    { color: '#424242' },
+                    { weight: 0.8 }
+                ]
+            },
+
+            // Ciudades (opcional)
+            {
+                featureType: 'administrative.locality',
+                elementType: 'labels.text',
+                stylers: [{ visibility: 'on' }]
+            },
+
+            // Carreteras principales
+            {
+                featureType: 'road.highway',
+                elementType: 'geometry',
+                stylers: [
+                    { visibility: 'on' },
+                    { color: '#ffa726' },
+                    { weight: 1.6 }
+                ]
+            },
+            {
+                featureType: 'road.highway',
+                elementType: 'labels',
+                stylers: [{ visibility: 'on' }]
+            },
+
+            // Arteriales
+            {
+                featureType: 'road.arterial',
+                elementType: 'geometry',
+                stylers: [
+                    { visibility: 'on' },
+                    { color: '#c1c7ca' },
+                    { weight: 1.2 }
+                ]
+            },
+            {
+                featureType: 'road.arterial',
+                elementType: 'labels.text',
+                stylers: [{ visibility: 'on' }]
+            },
+
+            // Calles locales más discretas
+            {
+                featureType: 'road.local',
+                elementType: 'geometry',
+                stylers: [
+                    { color: '#e0e0e0' },
+                    { weight: 0.6 }
+                ]
+            },
+
+            // Agua sin etiquetas
+            {
+                featureType: 'water',
+                elementType: 'labels',
+                stylers: [{ visibility: 'off' }]
+            }
+        ];
+        // Patterns to suppress specific commercial addresses/names (case-insensitive)
+        const HIDDEN_ADDRESS_PATTERNS = [
+            /costco/i,
+            /costco\s*wholesale/i,
+            /930\s*Erb/i,
+            /erb\s*st/i,
+            /supermarket/i,
+            /grocery/i,
+            /shopping\s*mall/i,
+            /store/i
+        ];
+        function initMap() {
+            geocoder = new google.maps.Geocoder();
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 43.46, lng: -80.52 },
+                zoom: 12,
+                mapTypeControl: false,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                streetViewControl: false,
+                clickableIcons: false,
+                styles: mapStyles
+            });
+
+            // Ensure lines are redrawn when the container scrolls or the map finishes moving
+            document.getElementById('map-wrapper').addEventListener('scroll', drawLines);
+            let insetTimeout = null;
+            map.addListener('idle', () => {
+                clearTimeout(insetTimeout);
+                insetTimeout = setTimeout(() => {
+                    handleInsets();
+                }, 250);
+            });
+        }
+
+        /**
+         * Fetches default location data and places the "Star" reference pin
+         */
+        const loadDefaultSubjectSite = async () => {
+            try {
+                /*const response = await fetch('excel example/local_amenity_map.json');
+                const data = await response.json();
+                const fullAddress = `${data['Subject site address']}, ${data['Subject site city']}, ${data['Subject site province']}`;*/
+                // Do not place a subject pin for suppressed commercial addresses
+                if (subjectSite && HIDDEN_ADDRESS_PATTERNS.some(rx => rx.test(subjectSite))) {
+
+                    return;
+                }
+
+                geocoder.geocode({ address: subjectSite }, (results, status) => {
+                    if (status === 'OK') {
+                        const loc = results[0].geometry.location;
+                        if (referencePin) referencePin.setMap(null);
+                        referencePin = new google.maps.Marker({
+                            position: loc, map: map,
+                            icon: {
+                                url: createNumberedIcon('S', { backgroundColor: '#37DB44' }),
+                                scaledSize: new google.maps.Size(28, 40)
+                            },
+                            zIndex: 9999
+                        });
+                        map.setCenter(loc);
+                        map.setZoom(13);
+                    }
+                });
+            } catch (e) {
+                console.warn("Could not load default subject site JSON", e);
+            }
+        };
+
+        function isGroupInViewport(group, mapBounds) {
+            const groupBounds = new google.maps.LatLngBounds();
+            group.forEach(m => groupBounds.extend(m.getPosition()));
+            return mapBounds.intersects(groupBounds);
+        }
+
+        function calculateDensity(markers, minRadius, maxRadius) {
+            return markers.map((marker, idx) => {
+                let count = 0;
+
+                for (let j = 0; j < markers.length; j++) {
+                    if (j === idx) continue;
+
+                    const d = google.maps.geometry.spherical
+                        .computeDistanceBetween(
+                            marker.getPosition(),
+                            markers[j].getPosition()
+                        );
+
+                    if (d >= minRadius && d <= maxRadius) {
+                        count++;
+                    }
+                }
+
+                return { marker, idx, density: count };
+            });
+        }
+
+
+        function groupMarkersByDensity(markers) {
+            // 1. Calcular radios dinámicos según el zoom actual
+            const { min, max } = getDynamicRadii(map.getZoom());
+
+            // 2. Calcular densidad usando esos radios
+            const densityList = calculateDensity(markers, min, max);
+
+            // 3. Ordenar de mayor a menor densidad
+            densityList.sort((a, b) => b.density - a.density);
+
+            const used = new Set();
+            const groups = [];
+
+            // 4. Construcción de grupos con expansión por vecinos cercanos
+            for (const item of densityList) {
+                if (used.has(item.idx)) continue;
+
+                const base = item.marker;
+                const basePos = base.getPosition();
+                const groupIdx = new Set([item.idx]);
+                const queue = [item.idx];
+
+                while (queue.length && groupIdx.size < MAX_GROUP_SIZE) {
+                    const curIdx = queue.shift();
+                    const curMarker = markers[curIdx];
+
+                    const candidates = [];
+                    for (const candidate of densityList) {
+                        if (used.has(candidate.idx) || groupIdx.has(candidate.idx)) continue;
+                        const dist = google.maps.geometry.spherical.computeDistanceBetween(
+                            curMarker.getPosition(),
+                            candidate.marker.getPosition()
+                        );
+                        if (dist >= min && dist <= max) {
+                            const distToBase = google.maps.geometry.spherical.computeDistanceBetween(
+                                basePos,
+                                candidate.marker.getPosition()
+                            );
+                            candidates.push({ idx: candidate.idx, distToBase });
+                        }
+                    }
+
+                    candidates.sort((a, b) => a.distToBase - b.distToBase);
+                    for (const cand of candidates) {
+                        if (groupIdx.size >= MAX_GROUP_SIZE) break;
+                        groupIdx.add(cand.idx);
+                        queue.push(cand.idx);
+                    }
+                }
+
+                if (groupIdx.size >= MIN_GROUP_SIZE) {
+                    const group = Array.from(groupIdx).map(i => markers[i]);
+                    group.forEach(m => used.add(markers.indexOf(m)));
+                    groups.push(group);
+                }
+            }
+
+            return groups;
+        }
+
+        function getDynamicRadii(zoom) {
+            // Ajuste suave por zoom, respetando el rango configurado
+            const factor = Math.max(0.6, Math.min(1.4, 14 / zoom));
+            const min = Math.max(5, MIN_RADIUS_METERS * factor);
+            const max = Math.max(min, MAX_RADIUS_METERS * factor);
+
+            return { min, max };
+        }
+
+
+        function handleInsets() {
+            //
+            console.log('zoom', map.getZoom());
+            if (map.getZoom() <= DETAIL_ZOOM_THRESHOLD || map.getZoom() >= MAX_DETAIL_ZOOM_THRESHOLD) {
+                document.querySelectorAll('.inset-box').forEach(b => b.remove());
+                const svg = document.getElementById('connector-canvas');
+                if (svg) svg.innerHTML = '';
+                return;
+            }
+            const mapBounds = map.getBounds();
+            if (!mapBounds) return;
+
+            const projection = map.getProjection();
+            if (!projection) return;
+
+            // const MIN_GROUP_SIZE = 3;
+            const MAX_ITEMS_PER_INSET = 10;
+            const PIXEL_THRESHOLD = Math.max(24, 100 - map.getZoom() * 5);
+            const INTERNAL_COLLISION = 45; // Buffer for sub-marker distance inside insets
+
+
+            // Helper to calculate pixel distance between two LatLngs
+            const getDist = (m1, m2, z) => {
+                const p1 = projection.fromLatLngToPoint(m1.getPosition());
+                const p2 = projection.fromLatLngToPoint(m2.getPosition());
+                const s = Math.pow(2, z);
+                return Math.sqrt(Math.pow((p1.x - p2.x) * s, 2) + Math.pow((p1.y - p2.y) * s, 2));
+            };
+
+            function buildGroups(markers) {
+                const groups = [];
+                const visited = new Set();
+
+                for (let i = 0; i < markers.length; i++) {
+                    if (visited.has(i)) continue;
+
+                    const stack = [i];
+                    const group = [];
+
+                    while (stack.length) {
+                        const idx = stack.pop();
+                        if (visited.has(idx)) continue;
+
+                        visited.add(idx);
+                        group.push(markers[idx]);
+
+                        for (let j = 0; j < markers.length; j++) {
+                            if (!visited.has(j) &&
+                                getDist(markers[idx], markers[j], map.getZoom()) < PIXEL_THRESHOLD) {
+                                stack.push(j);
+                            }
+                        }
+                    }
+
+                    if (group.length >= MIN_GROUP_SIZE) {
+                        groups.push(group);
+                    }
+                }
+                return groups;
+            }
+            const finalGroups = groupMarkersByDensity(markers);
+
+
+
+            const processGroup = (group) => {
+                if (group.length < 2) return;
+                const b = new google.maps.LatLngBounds();
+                group.forEach(m => b.extend(m.getPosition()));
+                const ez = getBoundsZoomLevel(b, { width: 280, height: 200 });
+
+                let collision = false;
+                for (let a = 0; a < group.length; a++) {
+                    for (let k = a + 1; k < group.length; k++) {
+                        if (getDist(group[a], group[k], ez) < INTERNAL_COLLISION) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    if (collision) break;
+                }
+
+                if (collision && group.length >= 2) {
+                    if (collision && group.length >= 2) {
+                        group.sort((a, b) =>
+                            a.getPosition().lat() - b.getPosition().lat()
+                        );
+
+                        const mid = Math.ceil(group.length / 2);
+                        processGroup(group.slice(0, mid));
+                        processGroup(group.slice(mid));
+                    }
+
+                } else if (!collision && group.length >= 2) {
+                    finalGroups.push(group);
+                }
+            };
+            const groupedMarkers = new Set(finalGroups.flat());
+            markers.forEach(m => {
+                if (!groupedMarkers.has(m)) {
+                    m.setMap(map);
+                }
+            });
+
+            const visibleGroups = finalGroups.filter(group =>
+                isGroupInViewport(group, mapBounds)
+            );
+
+            renderInsets(visibleGroups);
+        }
+
+        function getBoundsZoomLevel(bounds, mapDim) {
+            const WORLD_DIM = { height: 256, width: 256 };
+            function latRad(lat) { return Math.sin(lat * Math.PI / 180); }
+            function zoom(mapPx, worldPx, fraction) {
+                return Math.floor(Math.log(mapPx / worldPx / fraction) / Math.LN2);
+            }
+            const ne = bounds.getNorthEast(), sw = bounds.getSouthWest();
+            const latFraction = (latRad(ne.lat()) - latRad(sw.lat())) / Math.PI;
+            const lngFraction = ((ne.lng() - sw.lng() < 0) ? (ne.lng() - sw.lng() + 360) : ne.lng() - sw.lng()) / 360;
+            return Math.min(zoom(mapDim.height, WORLD_DIM.height, latFraction), zoom(mapDim.width, WORLD_DIM.width, lngFraction), 21);
+        }
+
+        function groupMarkersByRadius(markers) {
+            const groups = [];
+            const used = new Set();
+
+            for (let i = 0; i < markers.length; i++) {
+                if (used.has(i)) continue;
+
+                const base = markers[i];
+                const group = [base];
+                used.add(i);
+
+                for (let j = 0; j < markers.length; j++) {
+                    if (used.has(j)) continue;
+
+                    const dist = google.maps.geometry.spherical
+                        .computeDistanceBetween(
+                            base.getPosition(),
+                            markers[j].getPosition()
+                        );
+
+                    if (dist >= MIN_RADIUS_METERS && dist <= MAX_RADIUS_METERS) {
+                        group.push(markers[j]);
+                        used.add(j);
+                    }
+
+                    if (group.length === MAX_GROUP_SIZE) break;
+                }
+
+                if (group.length >= MIN_GROUP_SIZE) {
+                    groups.push(group);
+                } else {
+                    // rollback si no cumple mínimo
+                    group.forEach(m => {
+                        const idx = markers.indexOf(m);
+                        if (idx !== i) used.delete(idx);
+                    });
+                    used.delete(i);
+                }
+            }
+
+            return groups;
+        }
+
+        function renderInsets(groups) {
+            document.querySelectorAll('.inset-box').forEach(b => b.remove());
+            const wrapper = document.getElementById('map-wrapper');
+            const projection = map.getProjection();
+            if (!projection) return;
+
+            const nw = projection.fromLatLngToPoint(new google.maps.LatLng(map.getBounds().getNorthEast().lat(), map.getBounds().getSouthWest().lng()));
+            const scale = Math.pow(2, map.getZoom());
+
+            const allPins = [...markers];
+            if (referencePin) allPins.push(referencePin);
+
+            // Relative pixel positions of all pins on the main map
+            const markerPositions = allPins.map(m => {
+                const p = projection.fromLatLngToPoint(m.getPosition());
+                return { x: (p.x - nw.x) * scale, y: (p.y - nw.y) * scale };
+            });
+
+            let placedRects = [];
+
+            groups.forEach((group, index) => {
+                const bounds = new google.maps.LatLngBounds();
+                group.forEach(m => bounds.extend(m.getPosition()));
+
+                // 1. Zoom calculation for the mini-map
+                let minGeoDist = Infinity;
+                for (let i = 0; i < group.length; i++) {
+                    for (let j = i + 1; j < group.length; j++) {
+                        const p1 = projection.fromLatLngToPoint(group[i].getPosition());
+                        const p2 = projection.fromLatLngToPoint(group[j].getPosition());
+                        const d = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+                        if (d < minGeoDist) minGeoDist = d;
+                    }
+                }
+                // Base the inset zoom on bounds so it doesn't over-zoom
+                const boundsZoom = getBoundsZoomLevel(bounds, { width: 240, height: 180 });
+                const calcZoom = Math.floor(Math.log2(20 / minGeoDist));
+                let idealZoom = Math.min(boundsZoom, calcZoom, 17);
+                idealZoom = Math.max(10, idealZoom);
+                const zoomScale = Math.pow(2, idealZoom);
+
+                const swP = projection.fromLatLngToPoint(bounds.getSouthWest());
+                const neP = projection.fromLatLngToPoint(bounds.getNorthEast());
+                let finalW = Math.max(160, Math.min(280, (neP.x - swP.x) * zoomScale + 70));
+                let finalH = Math.max(130, Math.min(240, (swP.y - neP.y) * zoomScale + 90));
+
+                // 2. SMART POSITIONING: Spiral search for empty space
+                const centerP = projection.fromLatLngToPoint(bounds.getCenter());
+                const cx = (centerP.x - nw.x) * scale;
+                const cy = (centerP.y - nw.y) * scale;
+
+                let finalL = cx, finalT = cy;
+                let found = false;
+
+                // Search in expanding circles (r) and angles to find a spot that doesn't hit a pin or another box
+                for (let r = 80; r < 500 && !found; r += 40) {
+                    for (let angle = 0; angle < 360 && !found; angle += 45) {
+                        const rad = angle * Math.PI / 180;
+                        const testL = cx + r * Math.cos(rad) - (finalW / 2);
+                        const testT = cy + r * Math.sin(rad) - (finalH / 2);
+                        const rect = { l: testL, t: testT, r: testL + finalW, b: testT + finalH };
+
+                        if (rect.l < 10 || rect.t < 10 || rect.r > wrapper.offsetWidth - 10 || rect.b > wrapper.offsetHeight - 10) continue;
+
+                        const hitPin = markerPositions.some(p => p.x > rect.l - 20 && p.x < rect.r + 20 && p.y > rect.t - 20 && p.y < rect.b + 20);
+                        const hitBox = placedRects.some(pr => !(rect.r < pr.l || rect.l > pr.r || rect.b < pr.t || rect.t > pr.b));
+
+                        if (!hitPin && !hitBox) {
+                            finalL = testL; finalT = testT;
+                            found = true;
+                        }
+                    }
+                }
+
+                // Fallback: If no ideal spot is found, stack on the right or left side
+                if (!found) {
+                    finalL = (cx < wrapper.offsetWidth / 2) ? wrapper.offsetWidth - finalW - 20 : 20;
+                    finalT = 20 + (index * 40);
+                }
+
+                placedRects.push({ l: finalL, t: finalT, r: finalL + finalW, b: finalT + finalH });
+
+                // Create the DOM element for the inset
+                const box = document.createElement('div');
+                box.className = 'inset-box';
+                box.style.width = finalW + 'px'; box.style.height = finalH + 'px';
+                box.style.left = finalL + 'px'; box.style.top = finalT + 'px';
+
+                box.dataset.lat = bounds.getCenter().lat(); box.dataset.lng = bounds.getCenter().lng();
+                box.innerHTML = `<div class="inset-header">DETAIL ${index + 1}</div><div class="inset-map-view" id="mini-${index}"></div>`;
+                wrapper.appendChild(box);
+
+                // Initialize the mini-map instance
+                const miniMap = new google.maps.Map(document.getElementById(`mini-${index}`), {
+                    center: bounds.getCenter(), zoom: idealZoom,
+                    disableDefaultUI: true, gestureHandling: 'greedy',
+                    styles: mapStyles
+                });
+
+                // Replicate markers in the mini-map, applying small offsets to reduce overlap
+                const MIN_INSET_SEPARATION_METERS = 20; // desired minimum separation between markers in inset
+
+                // Build the list of items to replicate — include the subject/reference pin
+                const replicateItems = group.slice();
+                if (referencePin && bounds.contains(referencePin.getPosition())) {
+                    replicateItems.push(referencePin);
+                }
+
+                const originalPositions = replicateItems.map(m => m.getPosition());
+
+                function adjustInsetPositions(positions, minSepMeters) {
+                    const adjusted = positions.map(p => ({ lat: p.lat(), lng: p.lng() }));
+                    for (let k = 0; k < adjusted.length; k++) {
+                        for (let j = 0; j < k; j++) {
+                            const pK = new google.maps.LatLng(adjusted[k].lat, adjusted[k].lng);
+                            const pJ = new google.maps.LatLng(adjusted[j].lat, adjusted[j].lng);
+                            const d = google.maps.geometry.spherical.computeDistanceBetween(pK, pJ);
+                            if (d < minSepMeters) {
+                                let angle = Math.atan2(adjusted[k].lat - adjusted[j].lat, adjusted[k].lng - adjusted[j].lng);
+                                if (!isFinite(angle)) angle = Math.random() * Math.PI * 2;
+                                const moveMeters = (minSepMeters - d) / 2 + 1;
+                                const dx = Math.cos(angle) * moveMeters; // east offset in meters
+                                const dy = Math.sin(angle) * moveMeters; // north offset in meters
+                                adjusted[k].lat += dy / 111320; // approx meters → degrees latitude
+                                adjusted[k].lng += dx / (111320 * Math.cos(adjusted[k].lat * Math.PI / 180));
+                            }
+                        }
+                    }
+                    return adjusted.map(a => new google.maps.LatLng(a.lat, a.lng));
+                }
+
+                const adjustedPositions = adjustInsetPositions(originalPositions, MIN_INSET_SEPARATION_METERS);
+                replicateItems.forEach((item, idx) => {
+                    const icon = (item === referencePin && referencePin.getIcon) ? referencePin.getIcon() : (item.getIcon ? item.getIcon() : null);
+                    new google.maps.Marker({ position: adjustedPositions[idx] || item.getPosition(), map: miniMap, icon: icon });
+                });
+                box.miniMap = miniMap;
+                makeBoxInteractive(box);
+            });
+            drawLines();
+        }
+
+        /**
+         * ENABLES DRAG & RESIZE using interact.js
+         */
+        function makeBoxInteractive(el) {
+            interact(el).draggable({
+                allowFrom: '.inset-header',
+                listeners: {
+                    move(event) {
+                        const t = event.target;
+                        const x = (parseFloat(t.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(t.getAttribute('data-y')) || 0) + event.dy;
+                        t.style.transform = `translate(${x}px, ${y}px)`;
+                        t.setAttribute('data-x', x);
+                        t.setAttribute('data-y', y);
+                        drawLines(); // Redraw lines during movement
+                    }
+                }
+            }).resizable({
+                edges: { left: true, right: true, bottom: true, top: false },
+                listeners: {
+                    move(event) {
+                        let t = event.target;
+                        let x = (parseFloat(t.getAttribute('data-x')) || 0);
+                        let y = (parseFloat(t.getAttribute('data-y')) || 0);
+
+                        t.style.width = event.rect.width + 'px';
+                        t.style.height = event.rect.height + 'px';
+
+                        x += event.deltaRect.left;
+                        y += event.deltaRect.top;
+
+                        t.style.transform = `translate(${x}px, ${y}px)`;
+                        t.setAttribute('data-x', x);
+                        t.setAttribute('data-y', y);
+
+                        // Resize map to fit new dimensions
+                        if (t.miniMap) google.maps.event.trigger(t.miniMap, 'resize');
+                        drawLines();
+                    }
+                }
+            });
+        }
+
+        /**
+         * DRAWS CONNECTOR LINES
+         * Draws a dashed SVG line between the center of the inset box
+         * and its corresponding LatLng location on the main map.
+         */
+        function drawLines() {
+            const svg = document.getElementById('connector-canvas');
+            svg.innerHTML = '<defs><filter id="shadow"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dx="1" dy="1"/><feComponentTransfer><feFuncA type="linear" slope="0.7"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+
+            const projection = map.getProjection();
+            if (!projection) return;
+
+            const nw = projection.fromLatLngToPoint(new google.maps.LatLng(map.getBounds().getNorthEast().lat(), map.getBounds().getSouthWest().lng()));
+            const scale = Math.pow(2, map.getZoom());
+
+            document.querySelectorAll('.inset-box').forEach(box => {
+                // Target point (the location on the map)
+                const p = projection.fromLatLngToPoint(new google.maps.LatLng(parseFloat(box.dataset.lat), parseFloat(box.dataset.lng)));
+                const tx = (p.x - nw.x) * scale, ty = (p.y - nw.y) * scale;
+
+                // Origin point (the UI box position)
+                const r = box.getBoundingClientRect(), wr = document.getElementById('map-wrapper').getBoundingClientRect();
+                const scrollTop = document.getElementById('map-wrapper').scrollTop;
+                const ox = (r.left + r.width / 2) - wr.left, oy = (r.top + r.height / 2) - wr.top + scrollTop;
+
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", ox);
+                line.setAttribute("y1", oy);
+                line.setAttribute("x2", tx);
+                line.setAttribute("y2", ty);
+                line.setAttribute("stroke", "#FF0000");
+                line.setAttribute("stroke-width", "1.5");
+                line.setAttribute("stroke-dasharray", "10,6");
+                line.setAttribute("class", "connector-line");
+                line.setAttribute("filter", "url(#shadow)");
+                svg.appendChild(line);
+            });
+        }
+
+        // FILE UPLOAD & PARSING LOGIC
+        document.getElementById('chooseBtn').onclick = () => document.getElementById('fileInput').click();
+        document.getElementById('fileInput').onchange = async (e) => {
+            const f = e.target.files[0];
+            cleanMap();
+            if (!f) return;
+
+            document.getElementById('fileName').textContent = f.name;
+            try {
+                const data = JSON.parse(await f.text());
+                // Map JSON keys to a standard object structure
+                subjectSite = data[0]?.subject_site || null;
+                loadDefaultSubjectSite();
+
+                // Normalize, map and remove duplicate addresses (by Value)
+                const seen = new Set();
+                let duplicatesRemoved = 0;
+                const rawItems = data
+                    .slice(1)
+                    .filter(item => item.Value !== undefined && item.Value !== null && item.Value.toString().trim() !== '')
+                    .map((it, i) => ({ No: it.No ?? (i + 2), Value: it.Value ?? it.address }));
+
+                parsedAddresses = rawItems.filter(it => {
+                    const key = (it.Value || '').toString().trim().toLowerCase();
+                    if (seen.has(key)) { duplicatesRemoved++; return false; }
+                    seen.add(key);
+                    return true;
+                });
+                if (duplicatesRemoved > 0) console.log(`Removed ${duplicatesRemoved} duplicate addresses`);
+
+                console.log("Parsed Addresses:", parsedAddresses);
+                //proccessAddress(parsedAddresses);
+                document.getElementById('addrList').innerHTML = parsedAddresses.map(a => `<li>${a.No}: ${a.Value}</li>`).join('');
+            } catch (err) {
+                alert("Error parsing JSON file");
+            }
+        };
+
+        function cleanMap() {
+            // Remove all regular markers
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+
+            // Remove reference/subject pin
+            if (referencePin) {
+                try { referencePin.setMap(null); } catch (e) { }
+                referencePin = null;
+            }
+
+            // Remove any inset boxes and connector lines
+            document.querySelectorAll('.inset-box').forEach(b => b.remove());
+            const svg = document.getElementById('connector-canvas');
+            if (svg) svg.innerHTML = '';
+        }
+
+        function createNumberedIcon(text, options = {}) {
+            const {
+                width = 28,
+                height = 40,
+                backgroundColor = '#DB4437',
+                borderColor = '#FFFFFF',
+                textColor = '#FFFFFF'
+            } = options;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            const centerX = width / 2;
+            const circleRadius = Math.round(width * 0.42); // ~12 for width=28
+            const circleCenterY = Math.round(height * 0.38); // ~15
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Shadow (subtle)
+            ctx.shadowColor = 'rgba(0,0,0,0.2)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetY = 1;
+
+            // Circle
+            ctx.fillStyle = backgroundColor;
+            ctx.beginPath();
+            ctx.arc(centerX, circleCenterY, circleRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Triangle (marker tip)
+            ctx.beginPath();
+            ctx.moveTo(centerX, height - 2);
+            ctx.lineTo(centerX - Math.round(circleRadius * 0.6), circleCenterY + circleRadius - 2);
+            ctx.lineTo(centerX + Math.round(circleRadius * 0.6), circleCenterY + circleRadius - 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Remove shadow before border & text
+            ctx.shadowColor = 'transparent';
+
+            // Border
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(centerX, circleCenterY, circleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Text
+            ctx.fillStyle = textColor;
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, centerX, circleCenterY + 1);
+
+            return canvas.toDataURL();
+        }
+
+        document.getElementById('drawBtn').onclick = async () => {
+            clearMap();
+
+            if (shouldCenterOnReferenceOnly()) {
+                centerMapOnReference();
+                return;
+            }
+
+            const bounds = new google.maps.LatLngBounds();
+
+            for (const entry of parsedAddresses) {
+                const location = await geocodeAddress(entry.Value);
+                console.log(`Geocoding "${entry.Value}":`, location);
+                if (!location) {
+                    console.warn(`No geocode result for "${entry.Value}"`);
+                    continue;
+                }
+
+                const marker = createMarker(entry, location);
+                markers.push(marker);
+                bounds.extend(location);
+            }
+
+            extendBoundsWithReference(bounds);
+            fitMapToBounds(bounds);
+        };
+
+        function clearMap() {
+            markers.forEach(m => m.setMap(null));
+            markers.length = 0;
+
+            document.querySelectorAll('.inset-box')
+                .forEach(el => el.remove());
+
+            const svg = document.getElementById('connector-canvas');
+            if (svg) svg.innerHTML = '';
+        }
+
+        function shouldCenterOnReferenceOnly() {
+            return parsedAddresses.length === 0 && !!referencePin;
+        }
+
+        function centerMapOnReference() {
+            map.setCenter(referencePin.getPosition());
+            map.setZoom(15);
+        }
+
+        function geocodeAddress(address) {
+            return new Promise(resolve => {
+                geocoder.geocode({ address }, (results, status) => {
+                    if (status === 'OK' && results && results[0]) {
+                        console.log(`Geocoded "${address}"`, results);
+                        resolve(results[0].geometry.location);
+                    } else {
+                        console.error(`Geocoding failed for "${address}"`, status);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        function createMarker(entry, location) {
+            return new google.maps.Marker({
+                position: location,
+                map,
+                icon: {
+                    url: createNumberedIcon(String(entry.No)),
+                    scaledSize: new google.maps.Size(28, 40)
+                }
+            });
+        }
+
+        function extendBoundsWithReference(bounds) {
+            if (referencePin) {
+                bounds.extend(referencePin.getPosition());
+            }
+        }
+
+        function fitMapToBounds(bounds) {
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds);
+            }
+        }
+
+
+
+
+        /**
+         * EXPORT FEATURE
+         * Captures the map wrapper (including SVG and insets) as a high-quality PNG
+         */
+        document.getElementById('exportPNG').onclick = async () => {
+            const canvas = await html2canvas(document.getElementById('map-wrapper'), {
+                useCORS: true,
+                allowTaint: true,
+                scale: 2 // Higher resolution export
+            });
+            const link = document.createElement('a');
+            link.download = 'map-export.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+
+        window.initMap = initMap;
+
+        // If the Google Maps API has already loaded before this script ran,
+        // ensure we still initialize the map so `mapStyles` are applied.
+        try {
+            if (window.google && window.google.maps && typeof initMap === 'function') {
+                // Ensure a clean slate before initializing if the API loaded early
+                try { cleanMap(); } catch (e) { /* ignore cleanup errors */ }
+                map = null;
+                initMap();
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // View type selection UI logic
+        (function () {
+            const viewSelect = document.getElementById('viewSelect');
+            if (viewSelect) {
+                viewSelect.addEventListener('change', (e) => {
+                    const titleEl = document.getElementById('panelTitle');
+                    if (titleEl) {
+                        const titles = {
+                            'old': 'Old Rental Comps - Upload JSON',
+                            'condo': 'Condo Comps - Upload JSON',
+                            'new': 'New Rental Comps - Upload JSON'
+                        };
+                        titleEl.textContent = titles[e.target.value] || titles['new'];
+                    }
+                });
+            }
+            // Menu toggle logic
+            const btn = document.getElementById('headerMenuButton'), menu = document.getElementById('headerMenu');
+            if (btn && menu) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    menu.classList.toggle('open');
+                };
+                document.onclick = () => menu.classList.remove('open');
+            }
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Amenities Map Generator</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon.png">
+    <link rel="shortcut icon" href="assets/img/favicon.png">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+<div id="app">
+    <header class="app-header">
+        <div class="app-header__brand">
+            <img src="assets/img/logo.png" alt="Local Amenities Map Generator logo" class="app-header__logo">
+            <h1>Local Amenities Map Generator</h1>
+        </div>
+
+        <div class="app-header__menu" style="position:relative;">
+            <button id="headerMenuButton" class="header-menu-button" aria-haspopup="true" aria-expanded="false"
+                    aria-controls="headerMenu">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20"
+                     height="20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18M3 12h18M3 18h18"/>
+                </svg>
+            </button>
+
+            <div id="headerMenu" class="header-menu-dropdown" role="menu" aria-labelledby="headerMenuButton">
+                <a href="index.html" role="menuitem">Home</a>
+                <a href="./new-rental-comps.html" role="menuitem">Rental comps map</a>
+            </div>
+        </div>
+    </header>
+    <main class="app-main">
+        <aside class="control-panel" aria-label="Points of interest search">
+            <section class="panel-section">
+                <h2>Import JSON</h2>
+                <div class="form-group">
+                    <input type="file" id="jsonImportInput" accept=".json" class="sr-only">
+                    <button id="jsonImportButton" type="button"class="btn" style="width: 100%; background: #1f2937; color: white;">Import Subject Site</button>
+                </div>
+                <div class="form-group">
+                    <label for="importedAddress">Imported Address</label>
+                    <input type="text" id="importedAddress" name="importedAddress" readonly
+                           placeholder="No address imported">
+                </div>
+                <div class="form-group">
+                    <label for="citySelect">City</label>
+                    <select id="citySelect" name="citySelect" disabled></select>
+                </div>
+                <div class="form-group">
+                    <label for="stateSelect">Province/State</label>
+                    <select id="stateSelect" name="stateSelect" disabled></select>
+                </div>
+                <p class="panel-hint">Upload a JSON file to populate the address, province, and city.</p>
+            </section>
+            <section class="panel-section" hidden aria-hidden="true">
+                <h2>Subject Site</h2>
+                <div class="button-group">
+                    <button id="addReferencePin" type="button">Set Subject Site</button>
+                    <button id="removeReferencePin" type="button" class="secondary">Clear Subject Site</button>
+                </div>
+                <p class="panel-hint">Click on the map to mark the subject site.</p>
+            </section>
+            <section class="panel-section">
+                <h2>POI Search</h2>
+                <div class="form-group">
+                    <label for="searchRadius">Search radius (meters)</label>
+                    <input type="number" id="searchRadius" name="searchRadius" min="100" max="50000" value="1000"
+                           step="100">
+                </div>
+                <div class="form-group">
+                    <label for="poiType">POI types</label>
+                    <div class="multi-select" id="poiTypeMultiSelect">
+                        <button type="button" id="poiTypeToggle" class="multi-select__toggle" aria-haspopup="listbox"
+                                aria-expanded="false">
+                            Select POI types
+                        </button>
+                        <div id="poiTypeOptions" class="multi-select__options" role="listbox"
+                             aria-multiselectable="true" hidden>
+                            <label class="multi-select__option multi-select__option--select-all" data-value="selectAll">
+                                <span class="multi-select__swatch multi-select__swatch--selectAll"></span>
+                                <span class="multi-select__label">Select all</span>
+                                <input type="checkbox" value="__all">
+                            </label>
+                            <label class="multi-select__option" data-value="bank">
+                                <span class="multi-select__swatch multi-select__swatch--bank"></span>
+                                <span class="multi-select__label">Bank</span>
+                                <input type="checkbox" value="bank">
+                            </label>
+                            <label class="multi-select__option" data-value="atm">
+                                <span class="multi-select__swatch multi-select__swatch--bank"></span>
+                                <span class="multi-select__label">ATM</span>
+                                <input type="checkbox" value="atm">
+                            </label>
+
+                            <label class="multi-select__option" data-value="pharmacy">
+                                <span class="multi-select__swatch multi-select__swatch--pharmacy"></span>
+                                <span class="multi-select__label">Pharmacy</span>
+                                <input type="checkbox" value="pharmacy">
+                            </label>
+
+                            <label class="multi-select__option" data-value="restaurant">
+                                <span class="multi-select__swatch multi-select__swatch--foodDrink"></span>
+                                <span class="multi-select__label">Restaurant</span>
+                                <input type="checkbox" value="restaurant">
+                            </label>
+                            <label class="multi-select__option" data-value="bar">
+                                <span class="multi-select__swatch multi-select__swatch--foodDrink"></span>
+                                <span class="multi-select__label">Bar</span>
+                                <input type="checkbox" value="bar">
+                            </label>
+                            <label class="multi-select__option" data-value="coffee">
+                                <span class="multi-select__swatch multi-select__swatch--foodDrink"></span>
+                                <span class="multi-select__label">Coffee</span>
+                                <input type="checkbox" value="coffee">
+                            </label>
+                            <label class="multi-select__option" data-value="bakery">
+                                <span class="multi-select__swatch multi-select__swatch--foodDrink"></span>
+                                <span class="multi-select__label">Bakery</span>
+                                <input type="checkbox" value="bakery">
+                            </label>
+
+                            <label class="multi-select__option" data-value="park">
+                                <span class="multi-select__swatch"></span>
+                                <span class="multi-select__label">Park</span>
+                                <input type="checkbox" value="park">
+                            </label>
+
+                            <label class="multi-select__option" data-value="liquor_store">
+                                <span class="multi-select__swatch multi-select__swatch--liquorStores"></span>
+                                <span class="multi-select__label">Liquor Stores</span>
+                                <input type="checkbox" value="liquor_store">
+                            </label>
+
+<!--                            <label class="multi-select__option" data-value="grocery_or_supermarket">-->
+<!--                                <span class="multi-select__swatch multi-select__swatch&#45;&#45;grocer"></span>-->
+<!--                                <span class="multi-select__label">Grocery or Supermarket</span>-->
+<!--                                <input type="checkbox" value="grocery_or_supermarket">-->
+<!--                            </label>-->
+
+                            <label class="multi-select__option" data-value="supermarket">
+                                <span class="multi-select__swatch multi-select__swatch--grocer"></span>
+                                <span class="multi-select__label">Supermarket</span>
+                                <input type="checkbox" value="supermarket">
+                            </label>
+
+                            <label class="multi-select__option" data-value="grocery">
+                                <span class="multi-select__swatch multi-select__swatch--grocer"></span>
+                                <span class="multi-select__label">Grocery</span>
+                                <input type="checkbox" value="grocery">
+                            </label>
+
+                            <label class="multi-select__option" data-value="store">
+                                <span class="multi-select__swatch multi-select__swatch--retailers"></span>
+                                <span class="multi-select__label">Retailers</span>
+                                <input type="checkbox" value="store">
+                            </label>
+                            <label class="multi-select__option" data-value="shopping_mall">
+                                <span class="multi-select__swatch multi-select__swatch--retailers"></span>
+                                <span class="multi-select__label">Shopping Mall</span>
+                                <input type="checkbox" value="shopping_mall">
+                            </label>
+
+                            <label class="multi-select__option" data-value="bus_station">
+                                <span class="multi-select__swatch multi-select__swatch--transit"></span>
+                                <span class="multi-select__label">Bus Station</span>
+                                <input type="checkbox" value="bus_station">
+                            </label>
+                            <label class="multi-select__option" data-value="subway_station">
+                                <span class="multi-select__swatch multi-select__swatch--transit"></span>
+                                <span class="multi-select__label">Subway Station</span>
+                                <input type="checkbox" value="subway_station">
+                            </label>
+                            <label class="multi-select__option" data-value="train_station">
+                                <span class="multi-select__swatch multi-select__swatch--transit"></span>
+                                <span class="multi-select__label">Train Station</span>
+                                <input type="checkbox" value="train_station">
+                            </label>
+                            <label class="multi-select__option" data-value="transit_station">
+                                <span class="multi-select__swatch multi-select__swatch--transit"></span>
+                                <span class="multi-select__label">Transit Station</span>
+                                <input type="checkbox" value="transit_station">
+                            </label>
+
+                            <label class="multi-select__option" data-value="gym">
+                                <span class="multi-select__swatch multi-select__swatch--sportRecreation"></span>
+                                <span class="multi-select__label">Gym</span>
+                                <input type="checkbox" value="gym">
+                            </label>
+
+                            <label class="multi-select__option" data-value="stadium">
+                                <span class="multi-select__swatch multi-select__swatch--sportRecreation"></span>
+                                <span class="multi-select__label">Stadium</span>
+                                <input type="checkbox" value="stadium">
+                            </label>
+
+                            <label class="multi-select__option" data-value="sports">
+                                <span class="multi-select__swatch multi-select__swatch--sportRecreation"></span>
+                                <span class="multi-select__label">Sports Centers</span>
+                                <input type="checkbox" value="sports">
+                            </label>
+
+                            <label class="multi-select__option" data-value="recreation_center">
+                                <span class="multi-select__swatch multi-select__swatch--sportRecreation"></span>
+                                <span class="multi-select__label">Recreation Centers</span>
+                                <input type="checkbox" value="recreation_center">
+                            </label>
+                        </div>
+                    </div>
+                    <select id="poiType" name="poiType" multiple class="sr-only" aria-hidden="true">
+                        <option value="bank">Bank</option>
+                        <option value="atm">ATM</option>
+                        <option value="pharmacy">Pharmacy</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="bar">Bar</option>
+                        <option value="coffee">Coffee</option>
+                        <option value="bakery">Bakery</option>
+                        <option value="park">Park</option>
+                        <option value="liquor_store">Liquor Stores</option>
+<!--                        <option value="grocery_or_supermarket">Grocery or Supermarket</option>-->
+                        <option value="supermarket">Supermarket</option>
+                        <option value="grocery">Grocery</option>
+                        <option value="store">Retailers</option>
+                        <option value="shopping_mall">Shopping Mall</option>
+                        <option value="bus_station">Bus Station</option>
+                        <option value="subway_station">Subway Station</option>
+                        <option value="train_station">Train Station</option>
+                        <option value="transit_station">Transit Station</option>
+                        <option value="gym">Gym</option>
+                        <option value="stadium">Stadium</option>
+                        <option value="sports">Sports Centers</option>
+                        <option value="recreation_center">Recreation Centers</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button id="searchPOI" type="button" style="background: #16a34a; color: white;" disabled>Search Nearby POI</button>
+                    <button id="clearPOI" type="button" class="btn" style="width: 100%; background: #1f2937; color: white;">Clear Results</button>
+                    <button id="exportPNG" type="button" class="btn" style="width: 100%; background: #1f2937; color: white;">Export Map as PNG</button>
+                </div>
+            </section>
+        </aside>
+        <section id="map" role="application" aria-label="Google Map for POI search"></section>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+        <div class="loading-overlay__content" role="status" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p id="loadingOverlayLabel" class="loading-overlay__label">Loading...</p>
+        </div>
+    </div>
+</div>
+<!-- Cargar configuración primero -->
+<script src="config.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- Cargar Google Maps API dinámicamente usando la config -->
+<script>
+    (function() {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    })();
+</script>
+<script>
+    // Small header menu toggle script for the static HTML version
+    (function () {
+        const btn = document.getElementById('headerMenuButton')
+        const menu = document.getElementById('headerMenu')
+        if (!btn || !menu) return
+        const closeMenu = () => {
+            menu.classList.remove('open')
+            btn.setAttribute('aria-expanded', 'false')
+        }
+        const openMenu = () => {
+            menu.classList.add('open')
+            btn.setAttribute('aria-expanded', 'true')
+        }
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation()
+            if (menu.classList.contains('open')) closeMenu()
+            else openMenu()
+        })
+        // close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && e.target !== btn) closeMenu()
+        })
+        // close on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu()
+        })
+    })()
+</script>
+</body>
+
+</html>

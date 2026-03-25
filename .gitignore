@@ -1,0 +1,15 @@
+/.idea/
+
+# API Keys y configuración sensible
+config.js
+
+# Node modules (si usas npm)
+node_modules/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.log
